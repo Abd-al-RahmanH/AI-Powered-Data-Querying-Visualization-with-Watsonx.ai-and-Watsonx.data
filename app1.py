@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-from pyhive import presto
-from ibm_watsonx_ai.foundation_models import Model
+from sqlalchemy.engine import create_engine
+from ibm_watsonx_ai.foundation_models import ModelInference
 from ibm_watsonx_ai.metanames import GenTextParamsMetaNames as GenParams
 
 # Watsonx Credentials
@@ -11,25 +11,29 @@ credentials = {
 }
 project_id = "289854e9-af72-4464-8bb2-4dedc59ad405"
 
-# Watsonx Model Initialization
+# Watsonx Model Initialization (Using ModelInference instead of Model)
 model_id = "meta-llama/llama-3-405b-instruct"
 parameters = {
     GenParams.MIN_NEW_TOKENS: 10,
     GenParams.MAX_NEW_TOKENS: 200,
     GenParams.TEMPERATURE: 0.7
 }
-model = Model(
+model = ModelInference(
     model_id=model_id,
     params=parameters,
     credentials=credentials,
     project_id=project_id
 )
 
-# Presto Connection Parameters
+# Presto Connection (Using SQLAlchemy)
 PRESTO_HOST = "34.238.192.61"
 PRESTO_PORT = 8443
 PRESTO_USERNAME = "ibmlhadmin"
 PRESTO_PASSWORD = "password"
+
+# Create Presto Connection URL
+presto_url = f"presto://{PRESTO_USERNAME}:{PRESTO_PASSWORD}@{PRESTO_HOST}:{PRESTO_PORT}/tpch/sf100"
+engine = create_engine(presto_url)
 
 # Streamlit UI
 st.markdown("<h1 style='text-align: center; color: #2196F3;'>NLP with WatsonX + Pandas</h1>", unsafe_allow_html=True)
@@ -46,19 +50,9 @@ nlp_query = st.text_area("Enter your question", "How many customers are in the c
 if st.button("Get Answer"):
     with st.spinner("Fetching data..."):
         try:
-            # Connect to Presto and get data
-            conn = presto.connect(
-                host=PRESTO_HOST,
-                port=PRESTO_PORT,
-                catalog=catalog,
-                schema=schema,
-                username=PRESTO_USERNAME,
-                password=PRESTO_PASSWORD,
-                protocol="https",
-                requests_kwargs={"verify": False}
-            )
+            # Fetch Data from Presto
             query = f"SELECT * FROM {catalog}.{schema}.customer"
-            df = pd.read_sql(query, conn)
+            df = pd.read_sql_query(query, engine)
 
             st.write("### 📊 Sample Data from Selected Table:")
             st.dataframe(df.head())
