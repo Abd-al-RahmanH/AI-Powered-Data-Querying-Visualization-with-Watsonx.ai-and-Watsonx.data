@@ -30,7 +30,7 @@ model = Model(
 )
 
 # Presto Connection Parameters
-PRESTO_HOST = "98.82.128.53"
+PRESTO_HOST = "98.80.145.196"
 PRESTO_PORT = 8443
 PRESTO_USERNAME = "ibmlhadmin"
 PRESTO_PASSWORD = "password"
