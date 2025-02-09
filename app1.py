@@ -36,124 +36,73 @@ PRESTO_PORT = 8443
 PRESTO_USERNAME = "ibmlhadmin"
 PRESTO_PASSWORD = "password"
 
-# Custom CSS for tag styling
-st.markdown(
-    """
-    <style>
-    .tag {
-        display: inline-block;
-        background-color: #3498db;
-        color: white;
-        padding: 5px 10px;
-        margin: 5px;
-        border-radius: 15px;
-        font-size: 14px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# Define available catalogs and schemas
+catalog_schema_map = {
+    "rahmans_cos": ["adidas1", "schema2"],
+    "tpch": ["sf100"],
+    "analytics_catalog": ["schema2"]
+}
+
+def extract_catalog_schema(prompt):
+    """Extract catalog and schema from the prompt."""
+    detected_catalog = None
+    detected_schema = None
+    for catalog, schemas in catalog_schema_map.items():
+        if catalog in prompt.lower():
+            detected_catalog = catalog
+            for schema in schemas:
+                if schema in prompt.lower():
+                    detected_schema = schema
+                    break
+    return detected_catalog, detected_schema
 
 # Streamlit App
 st.markdown("<h1 style='text-align: center; color: #2196F3;'>NLP with WatsonX.data</h1>", unsafe_allow_html=True)
 
-# Sidebar for Navigation
-st.sidebar.header("Navigation")
-section = st.sidebar.radio("Go to", ["SQL Query Editor", "BI Interaction Section"])
+# Step 1: Generate SQL Query
+st.header("Ask in Natural Language")
+nlp_prompt = st.text_area("Enter your question", "How many people wear Adidas in rahmans_cos catalog and adidas1 schema?")
 
-# Initialize session state for query results
-if "query_result" not in st.session_state:
-    st.session_state["query_result"] = None
-
-if "generated_query" not in st.session_state:
-    st.session_state["generated_query"] = ""
-
-if section == "SQL Query Editor":
-    # Sidebar for Multi-Select Catalog and Schema
-    st.sidebar.header("Configuration")
-    available_catalogs = ["tpch", "rahmans_cos", "analytics_catalog"]
-    available_schemas = ["sf100", "adidas1", "schema2"]
-
-    selected_catalogs = st.sidebar.multiselect("Select Catalogs", available_catalogs)
-    selected_schemas = st.sidebar.multiselect("Select Schemas", available_schemas)
-
-    # Display selected catalogs as tags
-    st.sidebar.write("### Selected Catalogs:")
-    for catalog in selected_catalogs:
-        st.sidebar.markdown(f'<span class="tag">{catalog}</span>', unsafe_allow_html=True)
-
-    # Display selected schemas as tags
-    st.sidebar.write("### Selected Schemas:")
-    for schema in selected_schemas:
-        st.sidebar.markdown(f'<span class="tag" style="background-color: #e67e22;">{schema}</span>', unsafe_allow_html=True)
-
-    # Step 1: Generate SQL Query
-    st.header("Generate SQL Query")
-    sql_prompt = st.text_area("Enter SQL prompt", "Write a SQL statement to select all rows from a table called customer.")
-    
-    if st.button("Generate SQL"):
-        with st.spinner("Generating SQL query..."):
+if st.button("Generate SQL"):
+    with st.spinner("Processing query..."):
+        detected_catalog, detected_schema = extract_catalog_schema(nlp_prompt)
+        if not detected_catalog or not detected_schema:
+            st.error("Error: Could not detect catalog or schema. Please specify them in your query.")
+        else:
             try:
-                # Ensure the model returns only SQL
-                prompt_text = f"Provide only the SQL query for: {sql_prompt}"
-                response = model.generate_text(prompt=prompt_text)
-                generated_query = response.strip() if isinstance(response, str) else response.get("generated_text", "").strip()
+                # Generate SQL query using Watsonx
+                response = model.generate_text(prompt=f"Generate an SQL query only without explanation: {nlp_prompt}")
+                generated_query = response.strip()
+                
                 if generated_query:
                     st.success("SQL query generated successfully!")
+                    st.text_area("Generated SQL Query", value=generated_query, height=150, key="generated_query")
                     st.session_state["generated_query"] = generated_query
                 else:
                     st.error("Error: Generated query is empty.")
             except Exception as e:
                 st.error(f"Error generating SQL: {e}")
 
-    # Step 2: Edit and Execute SQL Query
-    st.header("Edit and Execute SQL Query")
-    edited_query = st.text_area(
-        "Edit SQL Query",
-        value=st.session_state.get("generated_query", ""),
-        height=150,
-        key="edited_query"
-    )
-
-    execute = st.button("Execute Query")
-
-    # Execute Query Logic for Multiple Catalogs/Schemas
-    if execute:
-        with st.spinner("Executing SQL query..."):
-            try:
-                if not edited_query.strip():
-                    st.error("Error: SQL query cannot be empty!")
-                elif not selected_catalogs or not selected_schemas:
-                    st.error("Error: Please select at least one catalog and one schema!")
-                else:
-                    df_list = []
-                    table_requested = edited_query.split("FROM")[1].split()[0]  # Extract table name
-                    
-                    for catalog in selected_catalogs:
-                        for schema in selected_schemas:
-                            if (table_requested.startswith("rahman_cos") and catalog == "rahmans_cos") or \
-                               (table_requested.startswith("sf100") and schema == "sf100"):
-                                conn = presto.connect(
-                                    host=PRESTO_HOST,
-                                    port=PRESTO_PORT,
-                                    catalog=catalog,
-                                    schema=schema,
-                                    username=PRESTO_USERNAME,
-                                    password=PRESTO_PASSWORD,
-                                    protocol="https",
-                                    requests_kwargs={"verify": False}
-                                )
-                                df = pd.read_sql(edited_query, conn)
-                                df["Catalog"] = catalog
-                                df["Schema"] = schema
-                                df_list.append(df)
-                    
-                    if df_list:
-                        final_df = pd.concat(df_list, ignore_index=True)
-                        st.success("Query executed successfully!")
-                        st.dataframe(final_df)
-                        st.session_state["query_result"] = final_df
-                    else:
-                        st.warning("No matching catalog/schema for the requested table!")
-            except Exception as e:
-                st.error(f"Error executing SQL query: {e}")
+# Step 2: Execute SQL Query
+if "generated_query" in st.session_state and st.button("Execute Query"):
+    with st.spinner("Executing SQL query..."):
+        try:
+            conn = presto.connect(
+                host=PRESTO_HOST,
+                port=PRESTO_PORT,
+                catalog=detected_catalog,
+                schema=detected_schema,
+                username=PRESTO_USERNAME,
+                password=PRESTO_PASSWORD,
+                protocol="https",
+                requests_kwargs={"verify": False}
+            )
+            df = pd.read_sql(st.session_state["generated_query"], conn)
+            df["Catalog"] = detected_catalog
+            df["Schema"] = detected_schema
+            
+            st.success("Query executed successfully!")
+            st.dataframe(df)
+            st.session_state["query_result"] = df
+        except Exception as e:
+            st.error(f"Error executing SQL query: {e}")
