@@ -59,16 +59,20 @@ streamlit run app.py
 - Enter a natural language question.
 - Watsonx.ai generates the SQL query.
 
-![SQL Generation](images/1.jpg)
+![SQL Generation](images/0.jpg)
 
 ### **2️⃣ Execute Query on Watsonx.data**
 - The generated query runs on Watsonx.data.
 - Results are retrieved for visualization.
 
-![SQL Generation](images/2.jpg)
+![SQL Generation](images/1.jpg)
+
+![SQL Generation](images/1.5.jpg)
 
 ### **3️⃣ Visualize Results in BI Tool**
 - The query results are displayed using interactive charts and graphs.
+
+![SQL Generation](images/2.jpg)
 
 ![SQL Generation](images/3.jpg)
 
