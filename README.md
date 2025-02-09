@@ -56,7 +56,7 @@ streamlit run app.py
 
 ## How It Works 🔍
 
-###**Watsonx.data UI**
+### **Watsonx.data UI**
 - This is watsonx.data Infrastructure Manager
 ![SQL Generation](images/-1.jpg)
 
