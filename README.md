@@ -28,6 +28,7 @@ Unlock the power of AI-driven data querying and visualization with Watsonx.ai an
 ### 1️⃣ Clone the Repository
 ```bash
 git clone https://github.com/Abd-al-RahmanH/AI-Powered-Data-Querying-Visualization-with-Watsonx.ai-and-Watsonx.data.git
+
 cd AI-Powered-Data-Querying-Visualization-with-Watsonx.ai-and-Watsonx.data
 ```
 
@@ -37,7 +38,7 @@ pip install -r requirements.txt
 ```
 
 ### 3️⃣ Configure Watsonx.ai Credentials
-Update the `credentials` dictionary in `app.py`:
+Update the `credentials` and `presto credentials` dictionary in `app.py`:
 ```python
 credentials = {
     "url": "https://us-south.ml.cloud.ibm.com",
