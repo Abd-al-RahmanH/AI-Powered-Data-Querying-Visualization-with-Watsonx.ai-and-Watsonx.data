@@ -71,7 +71,7 @@ if "generated_query" not in st.session_state:
 if section == "SQL Query Editor":
     # Sidebar for Multi-Select Catalog and Schema
     st.sidebar.header("Configuration")
-    available_catalogs = ["tpch", "cloud_cos", "analytics_catalog"]
+    available_catalogs = ["tpch", "rahmans_cos", "analytics_catalog"]
     available_schemas = ["sf100", "adidas1", "schema2"]
 
     selected_catalogs = st.sidebar.multiselect("Select Catalogs", available_catalogs)
