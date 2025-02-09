@@ -1,0 +1,5 @@
+streamlit
+ibm-watsonx-ai
+pyhive
+pandas
+plotly
