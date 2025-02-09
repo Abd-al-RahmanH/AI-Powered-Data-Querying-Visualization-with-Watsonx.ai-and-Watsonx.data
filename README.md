@@ -58,6 +58,7 @@ streamlit run app.py
 
 ### **Watsonx.data UI**
 - This is watsonx.data Infrastructure Manager
+  
 ![SQL Generation](images/-1.jpg)
 
 ### **1️⃣ Generate SQL Query using AI**
