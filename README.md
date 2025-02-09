@@ -56,6 +56,10 @@ streamlit run app.py
 
 ## How It Works 🔍
 
+###**Watsonx.data UI**
+- This is watsonx.data Infrastructure Manager
+![SQL Generation](images/-1.jpg)
+
 ### **1️⃣ Generate SQL Query using AI**
 - Enter a natural language question.
 - Watsonx.ai generates the SQL query.
@@ -64,6 +68,9 @@ streamlit run app.py
 
 ### **2️⃣ Execute Query on Watsonx.data**
 - The generated query runs on Watsonx.data.
+- The below image shows we will get the data without logging into watsonx.data
+  
+![SQL Generation](images/0.5.jpg)
 - Results are retrieved for visualization.
 
 ![SQL Generation](images/1.jpg)
