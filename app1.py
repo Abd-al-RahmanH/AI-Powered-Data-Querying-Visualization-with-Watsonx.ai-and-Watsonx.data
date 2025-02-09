@@ -2,21 +2,24 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy.engine import create_engine
 from ibm_watsonx_ai.foundation_models import ModelInference
+from ibm_watsonx_ai.foundation_models.utils.enums import DecodingMethods
 from ibm_watsonx_ai.metanames import GenTextParamsMetaNames as GenParams
 
-# Watsonx Credentials
+# 🔹 Watsonx Credentials
 credentials = {
     "url": "https://us-south.ml.cloud.ibm.com",
     "apikey": "XfyqbHqkZSatzDxeQzzEdQbfu-DP-_ihUvSSmrmIiTmT"
 }
 project_id = "289854e9-af72-4464-8bb2-4dedc59ad405"
 
-# Watsonx Model Initialization (Using ModelInference instead of Model)
+# 🔹 Initialize WatsonX Model
 model_id = "meta-llama/llama-3-405b-instruct"
 parameters = {
     GenParams.MIN_NEW_TOKENS: 10,
-    GenParams.MAX_NEW_TOKENS: 200,
-    GenParams.TEMPERATURE: 0.7
+    GenParams.MAX_NEW_TOKENS: 196,
+    GenParams.DECODING_METHOD: DecodingMethods.GREEDY,
+    GenParams.TEMPERATURE: 0.7,
+    GenParams.REPETITION_PENALTY: 1
 }
 model = ModelInference(
     model_id=model_id,
@@ -25,52 +28,40 @@ model = ModelInference(
     project_id=project_id
 )
 
-# Presto Connection (Using SQLAlchemy)
+# 🔹 Presto Connection Parameters (Hardcoded)
 PRESTO_HOST = "34.238.192.61"
 PRESTO_PORT = 8443
 PRESTO_USERNAME = "ibmlhadmin"
 PRESTO_PASSWORD = "password"
+CATALOG = "tpch"
+SCHEMA = "sf100"
 
-# Create Presto Connection URL
-presto_url = f"presto://{PRESTO_USERNAME}:{PRESTO_PASSWORD}@{PRESTO_HOST}:{PRESTO_PORT}/tpch/sf100"
-engine = create_engine(presto_url)
+# 🔹 Create Presto Connection Using SQLAlchemy
+engine = create_engine(
+    f"presto://{PRESTO_USERNAME}:{PRESTO_PASSWORD}@{PRESTO_HOST}:{PRESTO_PORT}/{CATALOG}/{SCHEMA}?protocol=https"
+)
 
-# Streamlit UI
-st.markdown("<h1 style='text-align: center; color: #2196F3;'>NLP with WatsonX + Pandas</h1>", unsafe_allow_html=True)
+# 🔹 Streamlit App UI
+st.markdown("<h1 style='text-align: center; color: #2196F3;'>NLP-Powered Data Querying</h1>", unsafe_allow_html=True)
 
-# Catalog & Schema Selection
-st.sidebar.header("Database Selection")
-catalog = st.sidebar.selectbox("Select Catalog", ["tpch", "rahmans_cos", "analytics_catalog"])
-schema = st.sidebar.selectbox("Select Schema", ["sf100", "adidas1", "schema2"])
-
-# User Input for NLP Query
+# 🔹 User Input for NLP Query
 st.header("Ask a Question")
 nlp_query = st.text_area("Enter your question", "How many customers are in the customer table?")
 
 if st.button("Get Answer"):
-    with st.spinner("Fetching data..."):
+    with st.spinner("Processing your question..."):
         try:
-            # Fetch Data from Presto
-            query = f"SELECT * FROM {catalog}.{schema}.customer"
-            df = pd.read_sql_query(query, engine)
+            # 🔹 Step 1: Convert NLP Query to SQL Query
+            sql_prompt = f"Convert this question into a SQL query using the `{CATALOG}` catalog and `{SCHEMA}` schema: {nlp_query}"
+            response = model.generate_text(prompt=sql_prompt)
+            generated_query = response.strip()
+            st.info(f"Generated SQL: ```{generated_query}```")
 
-            st.write("### 📊 Sample Data from Selected Table:")
-            st.dataframe(df.head())
+            # 🔹 Step 2: Execute the Query in Presto
+            df = pd.read_sql(generated_query, engine)
 
-            # Generate Pandas query from NLP question
-            query_prompt = f"Convert this question into a valid Pandas DataFrame filtering operation: {nlp_query}\nDataFrame name: df"
-            response = model.generate_text(prompt=query_prompt)
-            pandas_query = response.strip()
-
-            # Execute the generated Pandas query
-            result = eval(pandas_query)  # Caution: Ensure trusted input in production
-
-            # Display results
-            st.success(f"Answer based on `{catalog}.{schema}`:")
-            if isinstance(result, pd.DataFrame):
-                st.dataframe(result)
-            else:
-                st.write(result)
-
+            # 🔹 Step 3: Display Results
+            st.success(f"Answer from `{CATALOG}.{SCHEMA}`:")
+            st.dataframe(df)
         except Exception as e:
             st.error(f"Error processing query: {e}")
