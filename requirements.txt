@@ -3,3 +3,4 @@ ibm-watsonx-ai
 pyhive
 pandas
 plotly
+sqlalchemy
