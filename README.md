@@ -9,7 +9,7 @@ app_file: app.py
 pinned: false
 ---
 
-# AI-Powered Data Querying & Visualization with Watsonx.ai and Watsonx.data 🚀
+# AI-Powered Data Querying & Visualization with Watsonx.ai and Watsonx.data 🚀 
 
 ![Project Banner](images/0.jpg)
 
