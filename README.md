@@ -23,7 +23,7 @@ Unlock the power of AI-driven data querying and visualization with Watsonx.ai an
 
 ---
 
-## Setup Guide 🛠️
+## Setup Guide 🛠️.
 
 ### 1️⃣ Clone the Repository
 ```bash
